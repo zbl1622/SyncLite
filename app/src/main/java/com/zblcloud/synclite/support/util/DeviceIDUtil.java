@@ -17,7 +17,7 @@ public class DeviceIDUtil {
         Application application = MainApplictation.getApplictation();
         //获取设备唯一标识
         String deviceID = PreferenceUtil.getInstance().getDeviceID();
-        if (TextUtils.isEmpty(deviceID)) {
+        if (!TextUtils.isEmpty(deviceID)) {
 
             deviceID = Settings.System.getString(application.getContentResolver(), Settings.Secure.ANDROID_ID);
 
