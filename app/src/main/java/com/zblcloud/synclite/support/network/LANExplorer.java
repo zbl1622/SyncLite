@@ -12,6 +12,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,8 +29,6 @@ public class LANExplorer {
 
     //发送组播socket
     private MulticastSocket multicastSocket;
-    //接收服务端回应socket
-    private DatagramSocket datagramSocket;
 
     private int socketTimeout = 1500;
 
@@ -42,11 +41,10 @@ public class LANExplorer {
     public LANExplorer() {
         try {
             multicastSocket = new MulticastSocket(7302);//客户端组播接收端口
-//            InetAddress group = InetAddress.getByName(GROUP_IP);
-//            multicastSocket.joinGroup(group);
+            multicastSocket.setSoTimeout(socketTimeout);
+            InetAddress group = InetAddress.getByName(GROUP_IP);
+            multicastSocket.joinGroup(group);
 
-            datagramSocket = new DatagramSocket(8008);
-            datagramSocket.setSoTimeout(socketTimeout);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -54,6 +52,11 @@ public class LANExplorer {
 
     public void setSocketTimeout(int socketTimeout) {
         this.socketTimeout = socketTimeout;
+        try {
+            multicastSocket.setSoTimeout(socketTimeout);
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
     }
 
     public void startSearch(@NonNull final SearchGatewayCallback callback) {
@@ -72,7 +75,7 @@ public class LANExplorer {
                     //接收监听
                     while (true) {
                         DatagramPacket datagramPacket = new DatagramPacket(buf, buf.length);
-                        datagramSocket.receive(datagramPacket); // 接收数据，同样会进入阻塞状态
+                        multicastSocket.receive(datagramPacket); // 接收数据，同样会进入阻塞状态
 
                         byte[] message = new byte[datagramPacket.getLength()]; // 从buffer中截取收到的数据
                         System.arraycopy(buf, 0, message, 0, datagramPacket.getLength());
@@ -111,9 +114,6 @@ public class LANExplorer {
     public void destroy() {
         if (multicastSocket != null) {
             multicastSocket.close();
-        }
-        if (datagramSocket != null) {
-            datagramSocket.close();
         }
     }
 
